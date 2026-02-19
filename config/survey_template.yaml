@@ -1,0 +1,35 @@
+questions:
+  - title: "전반적인 만족도는?"
+    type: scale
+    required: true
+    low: 1
+    high: 5
+    low_label: "매우 불만족"
+    high_label: "매우 만족"
+
+  - title: "가장 유익했던 내용은?"
+    type: paragraph
+    required: false
+
+  - title: "다음 모임에서 다뤘으면 하는 주제는?"
+    type: paragraph
+    required: false
+
+  - title: "다음 모임에도 참석할 의향이 있으신가요?"
+    type: radio
+    required: true
+    options:
+      - "예"
+      - "아마도"
+      - "아니오"
+
+  - title: "어떤 경로로 모임을 알게 되셨나요?"
+    type: checkbox
+    required: false
+    options:
+      - "Slack"
+      - "Telegram"
+      - "Facebook"
+      - "LinkedIn"
+      - "지인 소개"
+      - "기타"

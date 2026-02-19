@@ -1,6 +1,11 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
+Parameters:
+  VideoS3Bucket:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /nextflow-kr-automation/S3_VIDEO_BUCKET
+
 Globals:
   Function:
     Runtime: python3.12
@@ -72,4 +77,4 @@ Resources:
         - SSMParameterReadPolicy:
             ParameterName: nextflow-kr-automation/*
         - S3ReadPolicy:
-            BucketName: !Sub "{{resolve:ssm:/nextflow-kr-automation/S3_VIDEO_BUCKET}}"
+            BucketName: !Ref VideoS3Bucket

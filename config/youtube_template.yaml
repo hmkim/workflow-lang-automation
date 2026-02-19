@@ -1,0 +1,20 @@
+title: "[Nextflow KR] {event_name} ({dday})"
+
+description: |
+  Nextflow 한국어 커뮤니티 모임 영상입니다.
+
+  행사일: {dday}
+
+  ▶ 커뮤니티 채널: https://www.youtube.com/@WorkflowLanguage
+  ▶ 히스토리: https://docs.google.com/spreadsheets/d/1U5kPpx3fzOuWIPdrt2Iy5EZ7mG63UCJ_Po9iZkibLJs
+
+tags:
+  - Nextflow
+  - bioinformatics
+  - 바이오인포매틱스
+  - 워크플로
+  - 한국어
+  - nf-core
+
+category_id: "28"  # Science & Technology
+privacy_status: "public"

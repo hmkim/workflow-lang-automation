@@ -4,6 +4,7 @@ Google Forms 설문 자동 생성 (D-7) + Google Sheets 결과 집계 (D+7)
 import json
 import os
 import boto3
+import yaml
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
@@ -12,14 +13,21 @@ SSM_PREFIX = os.environ.get("SSM_PREFIX", "/nextflow-kr-automation")
 SCOPES = [
     "https://www.googleapis.com/auth/forms.body",
     "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/drive",
 ]
+
+QUESTION_TYPE_MAP = {
+    "scale":     lambda q: {"scaleQuestion": {"low": q["low"], "high": q["high"],
+                             "lowLabel": q.get("low_label", ""), "highLabel": q.get("high_label", "")}},
+    "paragraph": lambda q: {"textQuestion": {"paragraph": True}},
+    "radio":     lambda q: {"choiceQuestion": {"type": "RADIO",
+                             "options": [{"value": o} for o in q["options"]]}},
+    "checkbox":  lambda q: {"choiceQuestion": {"type": "CHECKBOX",
+                             "options": [{"value": o} for o in q["options"]]}},
+}
 
 
 def get_param(name: str) -> str:
-    return ssm.get_parameter(
-        Name=f"{SSM_PREFIX}/{name}", WithDecryption=True
-    )["Parameter"]["Value"]
+    return ssm.get_parameter(Name=f"{SSM_PREFIX}/{name}", WithDecryption=True)["Parameter"]["Value"]
 
 
 def get_credentials():
@@ -27,37 +35,36 @@ def get_credentials():
     return service_account.Credentials.from_service_account_info(sa_json, scopes=SCOPES)
 
 
+def load_survey_template() -> list:
+    path = os.path.join(os.path.dirname(__file__), "../../config/survey_template.yaml")
+    with open(path) as f:
+        return yaml.safe_load(f)["questions"]
+
+
 def create_survey(creds, event_name: str, dday: str) -> str:
-    forms_service = build("forms", "v1", credentials=creds)
-    form = forms_service.forms().create(body={
-        "info": {"title": f"[{event_name}] 참석 후기 설문 ({dday})"}
-    }).execute()
+    forms = build("forms", "v1", credentials=creds)
+    form = forms.forms().create(body={"info": {"title": f"[{event_name}] 참석 후기 ({dday})"}}).execute()
 
-    # 기본 질문 추가
-    forms_service.forms().batchUpdate(formId=form["formId"], body={"requests": [
-        {"createItem": {"item": {"title": "전반적인 만족도는?", "questionItem": {
-            "question": {"required": True, "scaleQuestion": {"low": 1, "high": 5}}
-        }}, "location": {"index": 0}}},
-        {"createItem": {"item": {"title": "가장 유익했던 내용은?", "questionItem": {
-            "question": {"required": False, "textQuestion": {"paragraph": True}}
-        }}, "location": {"index": 1}}},
-        {"createItem": {"item": {"title": "다음 모임에서 다뤘으면 하는 주제는?", "questionItem": {
-            "question": {"required": False, "textQuestion": {"paragraph": True}}
-        }}, "location": {"index": 2}}},
-    ]}).execute()
+    requests = []
+    for i, q in enumerate(load_survey_template()):
+        question_body = {"required": q.get("required", False), **QUESTION_TYPE_MAP[q["type"]](q)}
+        requests.append({"createItem": {
+            "item": {"title": q["title"], "questionItem": {"question": question_body}},
+            "location": {"index": i},
+        }})
 
+    forms.forms().batchUpdate(formId=form["formId"], body={"requests": requests}).execute()
     return f"https://docs.google.com/forms/d/{form['formId']}/viewform"
 
 
-def collect_results(creds, event_name: str):
+def collect_results(creds, event_name: str, dday: str):
     spreadsheet_id = get_param("GOOGLE_SPREADSHEET_ID")
     sheets = build("sheets", "v4", credentials=creds)
-    # 결과 집계는 Forms 응답 스프레드시트에서 읽어 메인 시트에 요약 행 추가
     sheets.spreadsheets().values().append(
         spreadsheetId=spreadsheet_id,
-        range="설문결과!A:A",
+        range="설문결과!A:C",
         valueInputOption="USER_ENTERED",
-        body={"values": [[event_name, "집계완료"]]},
+        body={"values": [[dday, event_name, "집계완료"]]},
     ).execute()
 
 
@@ -69,11 +76,10 @@ def lambda_handler(event, context):
 
     if offset == -7:
         survey_url = create_survey(creds, event_name, dday)
-        # notify 함수에 survey_url 전달 (EventBridge 통해 이미 별도 호출됨)
         return {"statusCode": 200, "survey_url": survey_url}
 
     if offset == 7:
-        collect_results(creds, event_name)
-        return {"statusCode": 200, "message": "결과 집계 완료"}
+        collect_results(creds, event_name, dday)
+        return {"statusCode": 200}
 
     return {"statusCode": 200}

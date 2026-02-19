@@ -1,0 +1,75 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 300
+    MemorySize: 256
+    Environment:
+      Variables:
+        SSM_PREFIX: /nextflow-kr-automation
+
+Resources:
+
+  # 일정 등록: GitHub Issue → EventBridge Rules 동적 생성
+  ScheduleRegisterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: nextflow-kr-schedule-register
+      CodeUri: functions/schedule_register/
+      Handler: app.lambda_handler
+      Policies:
+        - EventBridgeFullAccess
+        - Statement:
+            Effect: Allow
+            Action: lambda:AddPermission
+            Resource: "*"
+
+  # 알림: Slack + Telegram
+  NotifyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: nextflow-kr-notify
+      CodeUri: functions/notify/
+      Handler: app.lambda_handler
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: nextflow-kr-automation/*
+
+  # 설문조사: Google Forms 생성 + Sheets 집계
+  SurveyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: nextflow-kr-survey
+      CodeUri: functions/survey/
+      Handler: app.lambda_handler
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: nextflow-kr-automation/*
+
+  # 미팅: Zoom 링크 생성 + Gmail 발송
+  MeetingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: nextflow-kr-meeting
+      CodeUri: functions/meeting/
+      Handler: app.lambda_handler
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: nextflow-kr-automation/*
+
+  # 유튜브: S3 영상 → YouTube 업로드
+  YoutubeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: nextflow-kr-youtube
+      CodeUri: functions/youtube/
+      Handler: app.lambda_handler
+      Timeout: 900
+      MemorySize: 1024
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: nextflow-kr-automation/*
+        - S3ReadPolicy:
+            BucketName: !Sub "{{resolve:ssm:/nextflow-kr-automation/S3_VIDEO_BUCKET}}"

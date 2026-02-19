@@ -3,8 +3,8 @@ Transform: AWS::Serverless-2016-10-31
 
 Parameters:
   VideoS3Bucket:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /workflow-lang-automation/S3_VIDEO_BUCKET
+    Type: String
+    Default: placeholder
 
 Globals:
   Function:
@@ -25,11 +25,17 @@ Resources:
       CodeUri: functions/schedule_register/
       Handler: app.lambda_handler
       Policies:
-        - EventBridgeFullAccess
         - Statement:
-            Effect: Allow
-            Action: lambda:AddPermission
-            Resource: "*"
+            - Effect: Allow
+              Action:
+                - events:PutRule
+                - events:PutTargets
+                - events:DeleteRule
+                - events:RemoveTargets
+              Resource: "*"
+            - Effect: Allow
+              Action: lambda:AddPermission
+              Resource: "*"
 
   # 알림: Slack + Telegram
   NotifyFunction:

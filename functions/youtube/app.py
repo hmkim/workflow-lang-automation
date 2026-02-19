@@ -13,7 +13,7 @@ from googleapiclient.http import MediaFileUpload
 
 ssm = boto3.client("ssm")
 s3 = boto3.client("s3")
-SSM_PREFIX = os.environ.get("SSM_PREFIX", "/nextflow-kr-automation")
+SSM_PREFIX = os.environ.get("SSM_PREFIX", "/workflow-lang-automation")
 
 
 def get_param(name: str) -> str:

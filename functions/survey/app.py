@@ -9,7 +9,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
 ssm = boto3.client("ssm")
-SSM_PREFIX = os.environ.get("SSM_PREFIX", "/nextflow-kr-automation")
+SSM_PREFIX = os.environ.get("SSM_PREFIX", "/workflow-lang-automation")
 SCOPES = [
     "https://www.googleapis.com/auth/forms.body",
     "https://www.googleapis.com/auth/spreadsheets",

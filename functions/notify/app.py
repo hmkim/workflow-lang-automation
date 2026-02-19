@@ -9,7 +9,7 @@ import boto3
 import yaml
 
 ssm = boto3.client("ssm")
-SSM_PREFIX = os.environ.get("SSM_PREFIX", "/nextflow-kr-automation")
+SSM_PREFIX = os.environ.get("SSM_PREFIX", "/workflow-lang-automation")
 
 
 def get_param(name: str) -> str:

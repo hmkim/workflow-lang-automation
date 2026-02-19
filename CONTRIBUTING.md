@@ -11,7 +11,7 @@
 
 ```bash
 aws ssm put-parameter \
-  --name "/nextflow-kr-automation/파라미터명" \
+  --name "/workflow-lang-automation/파라미터명" \
   --value "실제값" \
   --type SecureString
 ```

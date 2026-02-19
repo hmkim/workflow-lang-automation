@@ -4,7 +4,7 @@ Transform: AWS::Serverless-2016-10-31
 Parameters:
   VideoS3Bucket:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /nextflow-kr-automation/S3_VIDEO_BUCKET
+    Default: /workflow-lang-automation/S3_VIDEO_BUCKET
 
 Globals:
   Function:
@@ -13,7 +13,7 @@ Globals:
     MemorySize: 256
     Environment:
       Variables:
-        SSM_PREFIX: /nextflow-kr-automation
+        SSM_PREFIX: /workflow-lang-automation
 
 Resources:
 
@@ -21,7 +21,7 @@ Resources:
   ScheduleRegisterFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: nextflow-kr-schedule-register
+      FunctionName: workflow-lang-schedule-register
       CodeUri: functions/schedule_register/
       Handler: app.lambda_handler
       Policies:
@@ -35,46 +35,46 @@ Resources:
   NotifyFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: nextflow-kr-notify
+      FunctionName: workflow-lang-notify
       CodeUri: functions/notify/
       Handler: app.lambda_handler
       Policies:
         - SSMParameterReadPolicy:
-            ParameterName: nextflow-kr-automation/*
+            ParameterName: workflow-lang-automation/*
 
   # 설문조사: Google Forms 생성 + Sheets 집계
   SurveyFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: nextflow-kr-survey
+      FunctionName: workflow-lang-survey
       CodeUri: functions/survey/
       Handler: app.lambda_handler
       Policies:
         - SSMParameterReadPolicy:
-            ParameterName: nextflow-kr-automation/*
+            ParameterName: workflow-lang-automation/*
 
   # 미팅: Zoom 링크 생성 + Gmail 발송
   MeetingFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: nextflow-kr-meeting
+      FunctionName: workflow-lang-meeting
       CodeUri: functions/meeting/
       Handler: app.lambda_handler
       Policies:
         - SSMParameterReadPolicy:
-            ParameterName: nextflow-kr-automation/*
+            ParameterName: workflow-lang-automation/*
 
   # 유튜브: S3 영상 → YouTube 업로드
   YoutubeFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: nextflow-kr-youtube
+      FunctionName: workflow-lang-youtube
       CodeUri: functions/youtube/
       Handler: app.lambda_handler
       Timeout: 900
       MemorySize: 1024
       Policies:
         - SSMParameterReadPolicy:
-            ParameterName: nextflow-kr-automation/*
+            ParameterName: workflow-lang-automation/*
         - S3ReadPolicy:
             BucketName: !Ref VideoS3Bucket

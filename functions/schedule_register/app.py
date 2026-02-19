@@ -22,10 +22,10 @@ SCHEDULE_OFFSETS = [
 ]
 
 FUNCTION_ARNS = {
-    "notify":  "nextflow-kr-notify",
-    "survey":  "nextflow-kr-survey",
-    "meeting": "nextflow-kr-meeting",
-    "youtube": "nextflow-kr-youtube",
+    "notify":  "workflow-lang-notify",
+    "survey":  "workflow-lang-survey",
+    "meeting": "workflow-lang-meeting",
+    "youtube": "workflow-lang-youtube",
 }
 
 
@@ -51,7 +51,7 @@ def lambda_handler(event, context):
     for schedule in SCHEDULE_OFFSETS:
         offset = schedule["offset"]
         trigger_date = dday + timedelta(days=offset)
-        rule_name = f"nextflow-kr-{event_name}-D{offset:+d}"
+        rule_name = f"workflow-lang-{event_name}-D{offset:+d}"
 
         events_client.put_rule(
             Name=rule_name,

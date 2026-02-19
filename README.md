@@ -1,4 +1,4 @@
-# nextflow-kr-automation
+# workflow-lang-automation
 
 Nextflow 한국어 커뮤니티 월간 운영 워크플로 자동화 프로젝트
 
@@ -26,7 +26,7 @@ AWS Lambda: schedule-register
 ## 디렉토리 구조
 
 ```
-nextflow-kr-automation/
+workflow-lang-automation/
 ├── .github/workflows/          # GitHub Actions
 ├── functions/
 │   ├── schedule_register/      # Issue → EventBridge 스케줄 등록
@@ -82,7 +82,7 @@ sam deploy --guided
 ```bash
 # SSM에 시크릿 등록 예시
 aws ssm put-parameter \
-  --name "/nextflow-kr-automation/SLACK_WEBHOOK_URL" \
+  --name "/workflow-lang-automation/SLACK_WEBHOOK_URL" \
   --value "https://hooks.slack.com/..." \
   --type SecureString
 ```

@@ -51,7 +51,7 @@ def lambda_handler(event, context):
     for schedule in SCHEDULE_OFFSETS:
         offset = schedule["offset"]
         trigger_date = dday + timedelta(days=offset)
-        rule_name = f"workflow-lang-{event_name}-D{offset:+d}"
+        rule_name = f"workflow-lang-{event_name}-D{offset:+d}".replace("+", "p").replace("-", "m", 1)
 
         events_client.put_rule(
             Name=rule_name,

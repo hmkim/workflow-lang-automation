@@ -47,9 +47,8 @@ def cron_expression(dt: datetime) -> str:
     return f"cron({dt.minute} {dt.hour} {dt.day} {dt.month} ? {dt.year})"
 
 
-def get_function_arn(func_name: str) -> str:
-    resp = lambda_client.get_function(FunctionName=func_name)
-    return resp["Configuration"]["FunctionArn"]
+def get_function_arn(func_name: str, account_id: str, region: str) -> str:
+    return f"arn:aws:lambda:{region}:{account_id}:function:{func_name}"
 
 
 def ensure_lambda_permission(func_name: str, rule_name: str, rule_arn: str):
@@ -92,7 +91,7 @@ def lambda_handler(event, context):
         targets = []
         for func in schedule["targets"]:
             func_name = FUNCTION_NAMES[func]
-            func_arn = get_function_arn(func_name)
+            func_arn = get_function_arn(func_name, account_id, region)
             ensure_lambda_permission(func_name, rule_name, rule_arn)
             targets.append({
                 "Id": func,

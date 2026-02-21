@@ -34,8 +34,10 @@ Resources:
                 - events:RemoveTargets
               Resource: "*"
             - Effect: Allow
-              Action: lambda:AddPermission
-              Resource: "*"
+              Action:
+                - lambda:AddPermission
+                - lambda:GetFunction
+              Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:workflow-lang-*"
 
   # 알림: Slack + Telegram
   NotifyFunction:

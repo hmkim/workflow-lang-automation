@@ -10,7 +10,6 @@ from datetime import datetime, timedelta
 events_client = boto3.client("events")
 lambda_client = boto3.client("lambda")
 
-# D-Day 기준 오프셋 및 타겟 함수 매핑
 SCHEDULE_OFFSETS = [
     {"offset": -30, "targets": ["notify"]},
     {"offset": -14, "targets": ["notify"]},
@@ -21,7 +20,7 @@ SCHEDULE_OFFSETS = [
     {"offset":  7,  "targets": ["notify", "survey", "youtube"]},
 ]
 
-FUNCTION_ARNS = {
+FUNCTION_NAMES = {
     "notify":  "workflow-lang-notify",
     "survey":  "workflow-lang-survey",
     "meeting": "workflow-lang-meeting",
@@ -36,16 +35,43 @@ def parse_date(body: str) -> datetime:
     return datetime.strptime(match.group(1), "%Y-%m-%d")
 
 
+def parse_event_name(title: str) -> str:
+    # "[11회 모임] 2026-02-24" → "11-2026-02-24"
+    clean = re.sub(r"[^\w가-힣]", "-", title)
+    clean = re.sub(r"-+", "-", clean).strip("-")
+    return clean[:40]
+
+
 def cron_expression(dt: datetime) -> str:
     return f"cron({dt.minute} {dt.hour} {dt.day} {dt.month} ? {dt.year})"
+
+
+def get_function_arn(func_name: str) -> str:
+    resp = lambda_client.get_function(FunctionName=func_name)
+    return resp["Configuration"]["FunctionArn"]
+
+
+def ensure_lambda_permission(func_name: str, rule_name: str, rule_arn: str):
+    sid = re.sub(r"[^a-zA-Z0-9]", "", rule_name)[:64]
+    try:
+        lambda_client.add_permission(
+            FunctionName=func_name,
+            StatementId=sid,
+            Action="lambda:InvokeFunction",
+            Principal="events.amazonaws.com",
+            SourceArn=rule_arn,
+        )
+    except lambda_client.exceptions.ResourceConflictException:
+        pass  # 이미 존재하면 무시
 
 
 def lambda_handler(event, context):
     body = event.get("issue", {}).get("body", "")
     title = event.get("issue", {}).get("title", "event")
-    event_name = re.sub(r"[^a-zA-Z0-9-]", "-", title)[:40]
-
+    event_name = parse_event_name(title)
     dday = parse_date(body)
+    account_id = context.invoked_function_arn.split(":")[4]
+    region = boto3.session.Session().region_name
     created_rules = []
 
     for schedule in SCHEDULE_OFFSETS:
@@ -54,21 +80,27 @@ def lambda_handler(event, context):
         sign = "p" if offset >= 0 else "m"
         rule_name = f"workflow-lang-{event_name}-D{sign}{abs(offset)}"
 
-        events_client.put_rule(
+        resp = events_client.put_rule(
             Name=rule_name,
             ScheduleExpression=cron_expression(trigger_date),
             State="ENABLED",
             Description=f"D{offset:+d} trigger for {event_name}",
         )
+        rule_arn = resp["RuleArn"]
 
         targets = []
         for func in schedule["targets"]:
-            func_name = FUNCTION_ARNS[func]
+            func_name = FUNCTION_NAMES[func]
+            func_arn = get_function_arn(func_name)
+            ensure_lambda_permission(func_name, rule_name, rule_arn)
             targets.append({
                 "Id": func,
-                "Arn": f"arn:aws:lambda:{boto3.session.Session().region_name}:"
-                       f"{context.invoked_function_arn.split(':')[4]}:function:{func_name}",
-                "Input": json.dumps({"offset": offset, "event_name": event_name, "dday": dday.isoformat()}),
+                "Arn": func_arn,
+                "Input": json.dumps({
+                    "offset": offset,
+                    "event_name": event_name,
+                    "dday": dday.strftime("%Y-%m-%d"),
+                }),
             })
 
         events_client.put_targets(Rule=rule_name, Targets=targets)

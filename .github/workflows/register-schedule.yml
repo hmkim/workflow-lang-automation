@@ -18,9 +18,10 @@ jobs:
 
       - name: Invoke schedule-register Lambda
         run: |
+          echo '${{ toJson(github.event) }}' > /tmp/payload.json
           aws lambda invoke \
             --function-name workflow-lang-schedule-register \
-            --payload "$(echo '${{ toJson(github.event) }}' | base64)" \
+            --payload file:///tmp/payload.json \
             --cli-binary-format raw-in-base64-out \
             response.json
           cat response.json

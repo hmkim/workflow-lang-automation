@@ -19,7 +19,7 @@ def get_param(name: str) -> str:
 
 
 def load_messages() -> dict:
-    config_path = os.path.join(os.path.dirname(__file__), "../../config/messages.yaml")
+    config_path = os.path.join(os.path.dirname(__file__), "messages.yaml")
     with open(config_path) as f:
         return yaml.safe_load(f)["messages"]
 
@@ -41,7 +41,7 @@ def lambda_handler(event, context):
     if not template:
         return {"statusCode": 200, "message": f"offset {offset} 에 해당하는 템플릿 없음"}
 
-    fmt = {"event_name": event_name, "dday": dday, **extra}
+    fmt = {**{"survey_url": "", "meeting_url": ""}, "event_name": event_name, "dday": dday, **extra}
 
     # Slack
     slack_url = get_param("SLACK_WEBHOOK_URL")

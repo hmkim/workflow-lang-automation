@@ -36,10 +36,11 @@ def parse_date(body: str) -> datetime:
 
 
 def parse_event_name(title: str) -> str:
-    # "[11회 모임] 2026-02-24" → "11-2026-02-24"
-    clean = re.sub(r"[^\w가-힣]", "-", title)
+    # "[11회 모임] 2026-02-24" → "11-2026-02-24" (ASCII만 허용)
+    ascii_only = re.sub(r"[^\x00-\x7F]", "", title)  # 한글 등 비ASCII 제거
+    clean = re.sub(r"[^a-zA-Z0-9]", "-", ascii_only)
     clean = re.sub(r"-+", "-", clean).strip("-")
-    return clean[:40]
+    return clean[:40] or "event"
 
 
 def cron_expression(dt: datetime) -> str:
